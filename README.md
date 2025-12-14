@@ -41,13 +41,12 @@ A real-time speech-to-text web app that works with Bluetooth headsets, AirPods, 
 
 ## 🛠 Setup GitHub Pages
 
-1. Push this repo to GitHub.
-1. Open **Settings → Pages** in your repository.
-1. Under **Source**, choose **Deploy from a branch**.
-1. Select **main** as the branch and **/** *(root)* as the folder.
-1. Click **Save**. GitHub will serve the existing `index.html` directly from the root.
-1. Wait about a minute for the deployment to finish.
-1. Your app is live at `https://YOUR_USERNAME.github.io/BLE_Transcriber/`.
+GitHub Pages is configured to publish straight from the repository root:
+
+1. Push this repo to GitHub and ensure your default branch is **main** (or update `.github/pages.yml` to match).
+1. Pages will deploy automatically from `main` via the included `Deploy GitHub Pages` workflow.
+1. The generated site is served directly from the existing `index.html` in the repository root—no build step required.
+1. After the workflow succeeds, your app is live at `https://YOUR_USERNAME.github.io/BLE_Transcriber/`.
 
 ## 📁 Files
 
