@@ -51,8 +51,9 @@ A real-time speech-to-text web app that works with Bluetooth headsets, AirPods, 
 ## 📁 Files
 
 ```
-├── index.html    # The complete web app (single file)
-└── README.md     # This file
+├── index.html       # The web app landing page
+├── Transcriber.html # Earlier prototype layout
+└── README.md        # This file
 ```
 
 ## 🌐 Browser Support
