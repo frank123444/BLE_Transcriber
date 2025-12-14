@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#007aff">
+  <title>Bluetooth Audio Transcriber</title>
+  <style>
+    :root {
+      --primary: #007aff;
+      --danger: #ff3b30;
+      --success: #34c759;
+      --warning: #ff9500;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #1c1c1e;
+      --text-secondary: #8e8e93;
+      --border: #e5e5ea;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --text: #ffffff;
+        --text-secondary: #8e8e93;
+        --border: #38383a;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.08);
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .status-dot.live { background: var(--success); }
+    .status-dot.error { background: var(--danger); }
+
+    h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .source {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .source-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+    }
+
+    .source h2 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+    }
+
+    .muted { color: var(--text-secondary); }
+
+    .levels {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      align-items: flex-end;
+      height: 24px;
+    }
+
+    .levels span {
+      flex: 1;
+      border-radius: 3px;
+      background: var(--border);
+      transition: height 0.1s linear, background 0.2s ease;
+      height: 4px;
+    }
+
+    .levels span.active { background: var(--success); }
+    .levels span.warning { background: var(--warning); }
+    .levels span.danger { background: var(--danger); }
+
+    .transcription {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 17px;
+      line-height: 1.5;
+      min-height: 160px;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .placeholder svg {
+      width: 82px;
+      height: 82px;
+      opacity: 0.25;
+    }
+
+    .controls {
+      position: sticky;
+      bottom: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    button, select {
+      font: inherit;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      grid-column: span 4;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    select { appearance: none; }
+
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--card);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    .alert {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(255, 59, 48, 0.1);
+      border: 1px solid rgba(255, 59, 48, 0.2);
+      border-radius: 12px;
+      color: var(--danger);
+      margin-top: 10px;
+    }
+
+    .alert.show { display: flex; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="status-dot" id="statusDot" aria-label="idle"></div>
+    <h1>Bluetooth Audio Transcriber</h1>
+    <div class="chip" id="languageChip">🌐 <span id="languageLabel">English</span></div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="source">
+        <div class="source-icon" id="sourceIcon" aria-hidden="true">🎙️</div>
+        <div>
+          <h2 id="sourceName">Waiting for microphone…</h2>
+          <div class="muted">Connected input</div>
+          <div class="levels" id="levelBars" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+      <div class="alert" id="errorBanner">⚠️ <span id="errorMessage"></span></div>
+    </section>
+
+    <section class="card">
+      <div class="transcription" id="transcriptionText"></div>
+      <div class="placeholder" id="placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12"></path>
+          <path d="M8 9v2a4 4 0 1 0 8 0V9"></path>
+          <path d="M5 10v2a7 7 0 0 0 14 0v-2"></path>
+          <path d="M12 19v2"></path>
+        </svg>
+        <p>Tap start to capture speech in real time. Works with Bluetooth headsets and built‑in microphones.</p>
+      </div>
+    </section>
+  </main>
+
+  <section class="controls">
+    <select id="languageSelect" aria-label="Language">
+      <option value="en-US" selected>English (US)</option>
+      <option value="en-GB">English (UK)</option>
+      <option value="de-DE">Deutsch</option>
+      <option value="fr-FR">Français</option>
+      <option value="es-ES">Español</option>
+      <option value="zh-CN">中文 (普通话)</option>
+      <option value="ja-JP">日本語</option>
+    </select>
+
+    <div class="actions">
+      <button id="copyBtn" disabled>Copy</button>
+      <button id="shareBtn" disabled>Share</button>
+      <button id="clearBtn" disabled>Clear</button>
+      <button id="startStopBtn" class="primary">Start listening</button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const statusDot = document.getElementById('statusDot');
+    const sourceName = document.getElementById('sourceName');
+    const sourceIcon = document.getElementById('sourceIcon');
+    const levelBars = Array.from(document.querySelectorAll('#levelBars span'));
+    const languageLabel = document.getElementById('languageLabel');
+    const languageSelect = document.getElementById('languageSelect');
+    const transcriptionText = document.getElementById('transcriptionText');
+    const placeholder = document.getElementById('placeholder');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+    const errorBanner = document.getElementById('errorBanner');
+    const errorMessage = document.getElementById('errorMessage');
+
+    let recognition;
+    let isListening = false;
+    let fullTranscription = '';
+    let interimTranscript = '';
+    let meterInterval;
+    let audioStream;
+
+    function createRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showError('Speech recognition is not available in this browser.');
+        startStopBtn.disabled = true;
+        return null;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = languageSelect.value;
+      return rec;
+    }
+
+    function setStatus(state) {
+      statusDot.classList.remove('live', 'error');
+      statusDot.classList.add(state);
+      statusDot.setAttribute('aria-label', state);
+    }
+
+    function updateTranscription() {
+      const content = fullTranscription + (interimTranscript ? `<span class="muted">${interimTranscript}</span>` : '');
+      transcriptionText.innerHTML = content;
+      placeholder.style.display = fullTranscription || interimTranscript ? 'none' : 'block';
+      copyBtn.disabled = !fullTranscription.trim();
+      shareBtn.disabled = !fullTranscription.trim() || !navigator.share;
+      clearBtn.disabled = !fullTranscription.trim();
+      transcriptionText.scrollTop = transcriptionText.scrollHeight;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorBanner.classList.add('show');
+      setStatus('error');
+      setTimeout(() => errorBanner.classList.remove('show'), 5000);
+    }
+
+    async function updateInputLabel() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mic = devices.find(d => d.kind === 'audioinput' && d.label) || devices.find(d => d.kind === 'audioinput');
+        if (mic) {
+          sourceName.textContent = mic.label || 'Microphone';
+          const lower = (mic.label || '').toLowerCase();
+          sourceIcon.textContent = lower.includes('airpod') || lower.includes('bluetooth') || lower.includes('wireless') ? '🎧' : '🎙️';
+        }
+      } catch (err) {
+        sourceName.textContent = 'Microphone';
+      }
+    }
+
+    async function startMeter(stream) {
+      stopMeter();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      source.connect(analyser);
+
+      meterInterval = setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+        const volume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        const normalized = Math.min(volume / 255, 1);
+        levelBars.forEach((bar, idx) => {
+          const threshold = (idx + 1) / levelBars.length;
+          const active = normalized > threshold * 0.6;
+          bar.style.height = `${Math.max(4, normalized * 24)}px`;
+          bar.classList.toggle('active', active);
+          bar.classList.toggle('warning', normalized > 0.6 && active);
+          bar.classList.toggle('danger', normalized > 0.8 && active);
+        });
+      }, 120);
+    }
+
+    function stopMeter() {
+      clearInterval(meterInterval);
+      levelBars.forEach(bar => {
+        bar.style.height = '4px';
+        bar.className = '';
+      });
+    }
+
+    async function startListening() {
+      if (isListening) return;
+      recognition = createRecognition();
+      if (!recognition) return;
+
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        updateInputLabel();
+        startMeter(audioStream);
+      } catch (err) {
+        showError('Microphone permission is required.');
+        return;
+      }
+
+      recognition.start();
+      isListening = true;
+      setStatus('live');
+      startStopBtn.textContent = 'Stop listening';
+      startStopBtn.classList.add('danger');
+      startStopBtn.style.background = 'var(--danger)';
+    }
+
+    function stopListening() {
+      if (!isListening) return;
+      recognition.stop();
+      if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+      }
+      stopMeter();
+      isListening = false;
+      startStopBtn.textContent = 'Start listening';
+      startStopBtn.classList.remove('danger');
+      startStopBtn.style.background = '';
+      setStatus('');
+    }
+
+    function wireRecognitionEvents(rec) {
+      rec.onresult = (event) => {
+        interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            fullTranscription += transcript.trim() + '\n';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        updateTranscription();
+      };
+
+      rec.onerror = (event) => {
+        showError(event.error === 'not-allowed' ? 'Microphone access was blocked.' : 'Speech recognition error occurred.');
+        stopListening();
+      };
+
+      rec.onend = () => {
+        if (isListening) {
+          rec.start();
+        }
+      };
+    }
+
+    languageSelect.addEventListener('change', () => {
+      languageLabel.textContent = languageSelect.options[languageSelect.selectedIndex].textContent;
+      if (recognition) {
+        recognition.lang = languageSelect.value;
+      }
+    });
+
+    startStopBtn.addEventListener('click', () => {
+      isListening ? stopListening() : startListening();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(fullTranscription.trim());
+        showToast('Copied to clipboard');
+      } catch (err) {
+        showError('Copy failed');
+      }
+    });
+
+    shareBtn.addEventListener('click', async () => {
+      if (!navigator.share) return;
+      try {
+        await navigator.share({ title: 'Transcription', text: fullTranscription.trim() });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          showError('Sharing not available');
+        }
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      fullTranscription = '';
+      interimTranscript = '';
+      updateTranscription();
+    });
+
+    (function init() {
+      recognition = createRecognition();
+      if (recognition) {
+        wireRecognitionEvents(recognition);
+      }
+      updateTranscription();
+      updateInputLabel();
+    })();
+  </script>
+</body>
+</html>
