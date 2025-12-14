@@ -4,9 +4,9 @@ A real-time speech-to-text web app that works with Bluetooth headsets, AirPods, 
 
 ## 🎯 Live Demo
 
-**[Open the App →](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)**
+**[Open the App →](https://YOUR_USERNAME.github.io/BLE_Transcriber/)**
 
-*(Update this link after enabling GitHub Pages)*
+*(Replace `YOUR_USERNAME` with your GitHub handle after enabling GitHub Pages.)*
 
 ## ✨ Features
 
@@ -41,12 +41,13 @@ A real-time speech-to-text web app that works with Bluetooth headsets, AirPods, 
 
 ## 🛠 Setup GitHub Pages
 
-1. Push this repo to GitHub
-1. Go to **Settings** → **Pages**
-1. Source: **Deploy from a branch**
-1. Branch: **main** / **root**
-1. Save and wait ~1 minute
-1. Your app is live at `https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/`
+1. Push this repo to GitHub.
+1. Open **Settings → Pages** in your repository.
+1. Under **Source**, choose **Deploy from a branch**.
+1. Select **main** as the branch and **/** *(root)* as the folder.
+1. Click **Save**. GitHub will serve the existing `index.html` directly from the root.
+1. Wait about a minute for the deployment to finish.
+1. Your app is live at `https://YOUR_USERNAME.github.io/BLE_Transcriber/`.
 
 ## 📁 Files
 
