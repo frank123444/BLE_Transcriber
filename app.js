@@ -61,6 +61,7 @@ class BLETranscriber {
         await this.checkIOSCapabilities();
         this.setupSpeechRecognition();
         this.bindEvents();
+        this.updateSessionSummary();
         
         console.log('BLE Transcriber Pro initialized');
     }
@@ -82,10 +83,17 @@ class BLETranscriber {
         document.getElementById('aiModelSelect').value = this.settings.aiModel;
         document.getElementById('iosNativeToggle').checked = this.settings.iosNative;
         document.getElementById('audioInputSelect').value = this.settings.audioInput;
+        this.updateSessionSummary();
     }
     
     saveSettings() {
         localStorage.setItem('ble_transcriber_settings', JSON.stringify(this.settings));
+    }
+    
+    getLanguageLabel(value) {
+        const select = document.getElementById('languageSelect');
+        const option = Array.from(select?.options || []).find(opt => opt.value === value);
+        return option ? option.textContent : value;
     }
     
     setupUI() {
@@ -413,6 +421,7 @@ class BLETranscriber {
     
     updateTranscriptCount() {
         document.getElementById('transcriptCount').textContent = this.transcripts.length;
+        this.updateSessionSummary();
     }
     
     showProcessingIndicator(show) {
@@ -426,6 +435,49 @@ class BLETranscriber {
         
         dot.className = 'status-dot ' + status;
         statusText.textContent = text;
+    }
+    
+    updateSessionSummary() {
+        const modeNames = {
+            'continuous': 'Continuous',
+            'pushToTalk': 'Push to Talk',
+            'voiceActivated': 'Voice Activated'
+        };
+        
+        const modeEl = document.getElementById('sessionModeValue');
+        if (modeEl) {
+            modeEl.textContent = modeNames[this.currentMode] || 'Continuous';
+        }
+        
+        const languageEl = document.getElementById('sessionLanguageValue');
+        if (languageEl) {
+            languageEl.textContent = this.getLanguageLabel(this.settings.language);
+        }
+        
+        const noiseEl = document.getElementById('sessionNoiseValue');
+        if (noiseEl) {
+            noiseEl.textContent = `${this.settings.noiseReduction}%`;
+        }
+        
+        const connectionCard = document.getElementById('connectionCard');
+        const connectionDot = document.getElementById('sessionConnectionDot');
+        if (connectionCard) {
+            connectionCard.classList.toggle('connected', this.bleConnected);
+        }
+        if (connectionDot) {
+            connectionDot.classList.toggle('active', this.bleConnected);
+        }
+        
+        const bleValue = document.getElementById('sessionBLEValue');
+        if (bleValue) {
+            bleValue.textContent = this.bleConnected ? (this.bleDevice?.name || 'BLE connected') : 'No BLE device connected';
+        }
+        
+        const entriesMeta = document.getElementById('sessionEntriesMeta');
+        if (entriesMeta) {
+            const count = this.transcripts.length;
+            entriesMeta.textContent = `${count} ${count === 1 ? 'entry' : 'entries'} in this session`;
+        }
     }
     
     // Recording controls
@@ -599,6 +651,10 @@ class BLETranscriber {
     
     updateBLEStatus(connected, deviceName = '') {
         const status = document.getElementById('bleStatus');
+        this.bleConnected = connected;
+        if (!connected) {
+            this.bleDevice = null;
+        }
         
         if (connected) {
             status.classList.add('connected');
@@ -607,6 +663,8 @@ class BLETranscriber {
             status.classList.remove('connected');
             status.querySelector('span').textContent = 'No BLE device connected';
         }
+        
+        this.updateSessionSummary();
     }
     
     // Export functions
@@ -753,6 +811,7 @@ class BLETranscriber {
                 this.recognition.lang = e.target.value;
             }
             this.saveSettings();
+            this.updateSessionSummary();
         });
         
         document.getElementById('speakerSelect').addEventListener('change', (e) => {
@@ -780,6 +839,7 @@ class BLETranscriber {
             this.settings.noiseReduction = parseInt(e.target.value);
             document.getElementById('noiseReductionValue').textContent = `${e.target.value}%`;
             this.saveSettings();
+            this.updateSessionSummary();
         });
         
         document.getElementById('aiModelSelect').addEventListener('change', (e) => {
@@ -799,6 +859,7 @@ class BLETranscriber {
         document.getElementById('audioInputSelect').addEventListener('change', (e) => {
             this.settings.audioInput = e.target.value;
             this.saveSettings();
+            this.updateSessionSummary();
         });
         
         // Transcript actions
@@ -841,6 +902,7 @@ class BLETranscriber {
             'voiceActivated': 'Voice Activated mode - Auto-detects speech'
         };
         this.updateStatus('ready', modeNames[mode]);
+        this.updateSessionSummary();
     }
 }
 

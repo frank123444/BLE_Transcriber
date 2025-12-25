@@ -112,6 +112,102 @@
             color: var(--accent-primary);
         }
 
+        .page-hero {
+            margin-bottom: 20px;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(0, 212, 170, 0.1);
+            color: var(--accent-primary);
+            font-size: 0.8rem;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0 6px;
+        }
+
+        .hero-lead {
+            color: var(--text-secondary);
+            max-width: 720px;
+            line-height: 1.6;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .status-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-1px);
+        }
+
+        .status-card-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .status-card-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .status-card-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .status-card.connection {
+            border-color: var(--border-active);
+        }
+
+        .status-card.connection.connected {
+            border-color: rgba(0, 212, 170, 0.35);
+            box-shadow: 0 0 0 1px rgba(0, 212, 170, 0.08);
+        }
+
+        .connection-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .status-card.connection.connected .connection-dot {
+            background: var(--accent-primary);
+            box-shadow: 0 0 0 6px rgba(0, 212, 170, 0.08);
+        }
+
         .header-actions {
             display: flex;
             gap: 8px;
@@ -726,6 +822,10 @@
                 padding: 12px;
             }
 
+            .hero-title {
+                font-size: 1.5rem;
+            }
+
             .settings-grid {
                 grid-template-columns: 1fr;
             }
@@ -803,6 +903,38 @@
                 </button>
             </div>
         </header>
+
+        <section class="page-hero">
+            <span class="hero-eyebrow">Live session overview</span>
+            <h1 class="hero-title">Update every transcript across your devices</h1>
+            <p class="hero-lead">Track BLE connectivity, language settings, and audio cleanup levels before you start recording. Quick checks keep your pages consistent across web and PWA installs.</p>
+        </section>
+
+        <div class="status-grid">
+            <div class="status-card">
+                <div class="status-card-label">Session mode</div>
+                <div class="status-card-value" id="sessionModeValue">Continuous</div>
+                <div class="status-card-meta">Tap a mode below to switch</div>
+            </div>
+            <div class="status-card">
+                <div class="status-card-label">Language</div>
+                <div class="status-card-value" id="sessionLanguageValue">English (US)</div>
+                <div class="status-card-meta">Speech recognition locale</div>
+            </div>
+            <div class="status-card">
+                <div class="status-card-label">Noise reduction</div>
+                <div class="status-card-value" id="sessionNoiseValue">50%</div>
+                <div class="status-card-meta">Filters filler words & repeats</div>
+            </div>
+            <div class="status-card connection" id="connectionCard">
+                <div class="status-card-label">
+                    Connection
+                    <span class="connection-dot" id="sessionConnectionDot"></span>
+                </div>
+                <div class="status-card-value" id="sessionBLEValue">No BLE device connected</div>
+                <div class="status-card-meta" id="sessionEntriesMeta">0 entries in this session</div>
+            </div>
+        </div>
 
         <!-- Settings Panel -->
         <div class="settings-panel" id="settingsPanel">
